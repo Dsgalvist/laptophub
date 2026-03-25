@@ -1,65 +1,63 @@
-import Image from "next/image";
+// This is the home page of the app
+// It introduces LaptopHub and directs users to browse listings
 
-export default function Home() {
+import Link from "next/link";
+
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-[#0f172a] text-white">
+      {/* Hero Section */}
+      <section className="mx-auto max-w-6xl px-6 py-20 text-center">
+        <h1 className="mb-6 text-4xl font-bold md:text-5xl">
+          Buy and Sell Laptops Easily
+        </h1>
+
+        <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-300">
+          LaptopHub is a simple marketplace where users can list, browse, and
+          find laptops based on their needs. Save favorites and manage your own
+          listings all in one place.
+        </p>
+
+        <Link
+          href="/listings"
+          className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+        >
+          Browse Listings
+        </Link>
+      </section>
+
+      {/* Features Section */}
+      <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-20 md:grid-cols-3">
+        <div className="rounded-xl border border-gray-700 bg-[#1e293b] p-6 shadow-md">
+          <h2 className="mb-3 text-2xl font-semibold text-white">
+            Create Listings
+          </h2>
+          <p className="text-gray-300">
+            Add your laptop details and create listings in a simple and
+            organized way.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="rounded-xl border border-gray-700 bg-[#1e293b] p-6 shadow-md">
+          <h2 className="mb-3 text-2xl font-semibold text-white">
+            Browse Laptops
+          </h2>
+          <p className="text-gray-300">
+            Explore available laptops and compare options based on your needs
+            and budget.
+          </p>
         </div>
-      </main>
-    </div>
+
+        <div className="rounded-xl border border-gray-700 bg-[#1e293b] p-6 shadow-md">
+          <h2 className="mb-3 text-2xl font-semibold text-white">
+            Save Favorites
+          </h2>
+          <p className="text-gray-300">
+            Keep track of laptops you like and access them easily from your
+            dashboard.
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }

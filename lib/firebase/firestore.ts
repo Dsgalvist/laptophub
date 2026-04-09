@@ -2,114 +2,120 @@
 // It helps me create, read, update, and delete data in Firestore
 
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    updateDoc,
-    where,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "./config";
 import type { Listing } from "@/types/listing";
 import type { Favorite } from "@/types/favorite";
 
 export const createListing = async (
-    listingData: Omit<Listing, "listingId">
+  listingData: Omit<Listing, "listingId">,
 ) => {
-    // Add a new listing to Firestore (Firebase generates the ID)
-    const docRef = await addDoc(collection(db, "listings"), listingData);
-
-    // Return the generated document ID
-    return docRef.id;
+  const docRef = await addDoc(collection(db, "listings"), listingData);
+  return docRef.id;
 };
 
 export const getListings = async (): Promise<Listing[]> => {
-    // Get all listings from Firestore
-    const querySnapshot = await getDocs(collection(db, "listings"));
+  const querySnapshot = await getDocs(collection(db, "listings"));
 
-    // Map each document into a Listing object
-    return querySnapshot.docs.map((doc) => ({
-        listingId: doc.id, // use Firestore document ID
-        ...doc.data(),
-    })) as Listing[];
+  return querySnapshot.docs.map((doc) => ({
+    listingId: doc.id,
+    ...doc.data(),
+  })) as Listing[];
 };
 
 export const getListingById = async (
-    listingId: string
+  listingId: string,
 ): Promise<Listing | null> => {
-    // Get a single listing using its ID
-    const docRef = doc(db, "listings", listingId);
-    const docSnap = await getDoc(docRef);
+  const docRef = doc(db, "listings", listingId);
+  const docSnap = await getDoc(docRef);
 
-    // If listing does not exist, return null
-    if (!docSnap.exists()) {
-        return null;
-    }
+  if (!docSnap.exists()) {
+    return null;
+  }
 
-    // Return listing data with ID
-    return {
-        listingId: docSnap.id,
-        ...docSnap.data(),
-    } as Listing;
+  return {
+    listingId: docSnap.id,
+    ...docSnap.data(),
+  } as Listing;
 };
 
 export const updateListing = async (
-    listingId: string,
-    updatedData: Partial<Listing>
+  listingId: string,
+  updatedData: Partial<Listing>,
 ) => {
-    // Update an existing listing
-    const docRef = doc(db, "listings", listingId);
-    await updateDoc(docRef, updatedData);
+  const docRef = doc(db, "listings", listingId);
+  await updateDoc(docRef, updatedData);
 };
 
 export const deleteListing = async (listingId: string) => {
-    // Delete a listing from Firestore
-    const docRef = doc(db, "listings", listingId);
-    await deleteDoc(docRef);
+  const docRef = doc(db, "listings", listingId);
+  await deleteDoc(docRef);
 };
 
 export const getUserListings = async (sellerId: string): Promise<Listing[]> => {
-    // Query listings that belong to a specific user
-    const q = query(collection(db, "listings"), where("sellerId", "==", sellerId));
+  const q = query(
+    collection(db, "listings"),
+    where("sellerId", "==", sellerId),
+  );
+  const querySnapshot = await getDocs(q);
 
-    const querySnapshot = await getDocs(q);
-
-    // Return all listings created by the user
-    return querySnapshot.docs.map((doc) => ({
-        listingId: doc.id,
-        ...doc.data(),
-    })) as Listing[];
+  return querySnapshot.docs.map((doc) => ({
+    listingId: doc.id,
+    ...doc.data(),
+  })) as Listing[];
 };
 
 export const addFavorite = async (
-    favoriteData: Omit<Favorite, "favoriteId">
+  favoriteData: Omit<Favorite, "favoriteId">,
 ) => {
-    // Add a new favorite entry (connects user and listing)
-    const docRef = await addDoc(collection(db, "favorites"), favoriteData);
-
-    return docRef.id;
+  const docRef = await addDoc(collection(db, "favorites"), favoriteData);
+  return docRef.id;
 };
 
-export const getUserFavorites = async (
-    userId: string
-): Promise<Favorite[]> => {
-    // Get all favorites for a specific user
-    const q = query(collection(db, "favorites"), where("userId", "==", userId));
+export const getUserFavorites = async (userId: string): Promise<Favorite[]> => {
+  const q = query(collection(db, "favorites"), where("userId", "==", userId));
+  const querySnapshot = await getDocs(q);
 
-    const querySnapshot = await getDocs(q);
-
-    // Return favorite records
-    return querySnapshot.docs.map((doc) => ({
-        favoriteId: doc.id,
-        ...doc.data(),
-    })) as Favorite[];
+  return querySnapshot.docs.map((doc) => ({
+    favoriteId: doc.id,
+    ...doc.data(),
+  })) as Favorite[];
 };
 
 export const removeFavorite = async (favoriteId: string) => {
-    // Remove a favorite entry from Firestore
-    const docRef = doc(db, "favorites", favoriteId);
-    await deleteDoc(docRef);
+  const docRef = doc(db, "favorites", favoriteId);
+  await deleteDoc(docRef);
+};
+
+export const getFavoriteByUserAndListing = async (
+  userId: string,
+  listingId: string,
+): Promise<Favorite | null> => {
+  const q = query(
+    collection(db, "favorites"),
+    where("userId", "==", userId),
+    where("listingId", "==", listingId),
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return null;
+  }
+
+  const favoriteDoc = querySnapshot.docs[0];
+
+  return {
+    favoriteId: favoriteDoc.id,
+    ...favoriteDoc.data(),
+  } as Favorite;
 };

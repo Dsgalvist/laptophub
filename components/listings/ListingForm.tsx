@@ -1,230 +1,242 @@
 "use client";
 
-// This component is used to create a new listing
-// It collects the form data, uploads the image, and saves the listing in Firestore
+// This component is used to create or edit a listing
+// It collects the form data and saves changes in Firestore
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createListing } from "@/lib/firebase/firestore";
-import { uploadImage } from "@/lib/firebase/storage";
+import { createListing, updateListing } from "@/lib/firebase/firestore";
 import type { Listing } from "@/types/listing";
 
 interface ListingFormProps {
-    sellerId: string;
+  sellerId: string;
+  existingListing?: Listing | null;
+  isEditMode?: boolean;
 }
 
-export default function ListingForm({ sellerId }: ListingFormProps) {
-    const router = useRouter();
+export default function ListingForm({
+  sellerId,
+  existingListing = null,
+  isEditMode = false,
+}: ListingFormProps) {
+  const router = useRouter();
 
-    // Form fields
-    const [title, setTitle] = useState("");
-    const [brand, setBrand] = useState("");
-    const [model, setModel] = useState("");
-    const [price, setPrice] = useState("");
-    const [ram, setRam] = useState("");
-    const [storage, setStorage] = useState("");
-    const [condition, setCondition] = useState("");
-    const [description, setDescription] = useState("");
+  // Store form values
+  const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [price, setPrice] = useState("");
+  const [ram, setRam] = useState("");
+  const [storage, setStorage] = useState("");
+  const [condition, setCondition] = useState("");
+  const [description, setDescription] = useState("");
 
-    // Image file
-    const [imageFile, setImageFile] = useState<File | null>(null);
+  // Store UI states
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    // UI states
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+  useEffect(() => {
+    // Fill the form if editing an existing listing
+    if (existingListing) {
+      setTitle(existingListing.title);
+      setBrand(existingListing.brand);
+      setModel(existingListing.model);
+      setPrice(existingListing.price.toString());
+      setRam(existingListing.ram);
+      setStorage(existingListing.storage);
+      setCondition(existingListing.condition);
+      setDescription(existingListing.description);
+    }
+  }, [existingListing]);
 
-    const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-        // Get the selected image file from the input
-        const file = event.target.files?.[0] || null;
-        setImageFile(file);
-    };
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    setSuccess("");
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setError("");
-        setSuccess("");
+    // Basic validation
+    if (
+      !title ||
+      !brand ||
+      !model ||
+      !price ||
+      !ram ||
+      !storage ||
+      !condition ||
+      !description
+    ) {
+      setError("Please fill in all fields.");
+      return;
+    }
 
-        // Basic validation
-        if (
-            !title ||
-            !brand ||
-            !model ||
-            !price ||
-            !ram ||
-            !storage ||
-            !condition ||
-            !description
-        ) {
-            setError("Please fill in all fields and upload an image.");
-            return;
-        }
+    try {
+      setLoading(true);
 
-        try {
-            setLoading(true);
+      // Placeholder image is used because Firebase Storage is not enabled
+      const imageUrl =
+        existingListing?.imageUrl || "https://via.placeholder.com/400";
 
-            // Upload image first and get its URL
-            const imageUrl = "https://via.placeholder.com/400";
+      const listingData: Omit<Listing, "listingId"> = {
+        sellerId,
+        title,
+        brand,
+        model,
+        price: Number(price),
+        ram,
+        storage,
+        condition,
+        description,
+        imageUrl,
+        status: existingListing?.status || "available",
+        createdAt: existingListing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-            // Prepare listing data without listingId
-            const newListing: Omit<Listing, "listingId"> = {
-                sellerId,
-                title,
-                brand,
-                model,
-                price: Number(price),
-                ram,
-                storage,
-                condition,
-                description,
-                imageUrl,
-                status: "available",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            };
+      if (isEditMode && existingListing) {
+        // Update an existing listing
+        await updateListing(existingListing.listingId, listingData);
+        setSuccess("Listing updated successfully.");
+      } else {
+        // Create a new listing
+        await createListing(listingData);
+        setSuccess("Listing created successfully.");
+      }
 
-            // Save listing data in Firestore
-            await createListing(newListing);
+      router.push("/dashboard/listings");
+    } catch (err) {
+      console.error("Error saving listing:", err);
+      setError("Something went wrong while saving the listing.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            setSuccess("Listing created successfully.");
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mx-auto max-w-2xl space-y-4 rounded-lg border border-gray-700 bg-[#1e293b] p-6 shadow-sm text-white"
+    >
+      <h2 className="text-2xl font-bold">
+        {isEditMode ? "Edit Listing" : "Add New Listing"}
+      </h2>
 
-            // Clear form
-            setTitle("");
-            setBrand("");
-            setModel("");
-            setPrice("");
-            setRam("");
-            setStorage("");
-            setCondition("");
-            setDescription("");
+      {error && (
+        <p className="rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
-            // Redirect after creating the listing
-            router.push("/dashboard/listings");
-        } catch (err) {
-            console.error("Error creating listing:", err);
-            setError("Something went wrong while creating the listing.");
-        } finally {
-            setLoading(false);
-        }
-    };
+      {success && (
+        <p className="rounded-md bg-green-100 px-3 py-2 text-sm text-green-700">
+          {success}
+        </p>
+      )}
 
-    return (
-        <form
-            onSubmit={handleSubmit}
-            className="mx-auto max-w-2xl space-y-4 rounded-lg border p-6 shadow-sm"
+      <div>
+        <label className="mb-1 block font-medium">Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Enter listing title"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">Brand</label>
+        <input
+          type="text"
+          value={brand}
+          onChange={(event) => setBrand(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Enter laptop brand"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">Model</label>
+        <input
+          type="text"
+          value={model}
+          onChange={(event) => setModel(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Enter laptop model"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">Price</label>
+        <input
+          type="number"
+          value={price}
+          onChange={(event) => setPrice(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Enter price"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">RAM</label>
+        <input
+          type="text"
+          value={ram}
+          onChange={(event) => setRam(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Example: 16GB"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">Storage</label>
+        <input
+          type="text"
+          value={storage}
+          onChange={(event) => setStorage(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Example: 512GB SSD"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">Condition</label>
+        <select
+          value={condition}
+          onChange={(event) => setCondition(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
         >
-            <h2 className="text-2xl font-bold">Add New Listing</h2>
+          <option value="">Select condition</option>
+          <option value="New">New</option>
+          <option value="Like New">Like New</option>
+          <option value="Used">Used</option>
+        </select>
+      </div>
 
-            {error && (
-                <p className="rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
-                    {error}
-                </p>
-            )}
+      <div>
+        <label className="mb-1 block font-medium">Description</label>
+        <textarea
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          rows={4}
+          placeholder="Enter listing description"
+        />
+      </div>
 
-            {success && (
-                <p className="rounded-md bg-green-100 px-3 py-2 text-sm text-green-700">
-                    {success}
-                </p>
-            )}
-
-            <div>
-                <label className="mb-1 block font-medium">Title</label>
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    placeholder="Enter listing title"
-                />
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">Brand</label>
-                <input
-                    type="text"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    placeholder="Enter laptop brand"
-                />
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">Model</label>
-                <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    placeholder="Enter laptop model"
-                />
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">Price</label>
-                <input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    placeholder="Enter price"
-                />
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">RAM</label>
-                <input
-                    type="text"
-                    value={ram}
-                    onChange={(e) => setRam(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    placeholder="Example: 16GB"
-                />
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">Storage</label>
-                <input
-                    type="text"
-                    value={storage}
-                    onChange={(e) => setStorage(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    placeholder="Example: 512GB SSD"
-                />
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">Condition</label>
-                <select
-                    value={condition}
-                    onChange={(e) => setCondition(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                >
-                    <option value="">Select condition</option>
-                    <option value="New">New</option>
-                    <option value="Like New">Like New</option>
-                    <option value="Used">Used</option>
-                </select>
-            </div>
-
-            <div>
-                <label className="mb-1 block font-medium">Description</label>
-                <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2"
-                    rows={4}
-                    placeholder="Enter listing description"
-                />
-            </div>
-
-            <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
-            >
-                {loading ? "Creating Listing..." : "Create Listing"}
-            </button>
-        </form>
-    );
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
+      >
+        {loading
+          ? isEditMode
+            ? "Updating Listing..."
+            : "Creating Listing..."
+          : isEditMode
+          ? "Update Listing"
+          : "Create Listing"}
+      </button>
+    </form>
+  );
 }

@@ -3,7 +3,7 @@
 // This component is used to create or edit a listing
 // It collects the form data and saves changes in Firestore
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createListing, updateListing } from "@/lib/firebase/firestore";
 import type { Listing } from "@/types/listing";
@@ -30,6 +30,7 @@ export default function ListingForm({
   const [storage, setStorage] = useState("");
   const [condition, setCondition] = useState("");
   const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
 
   // Store UI states
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ export default function ListingForm({
       setStorage(existingListing.storage);
       setCondition(existingListing.condition);
       setDescription(existingListing.description);
+      setLocation(existingListing.location || "");
     }
   }, [existingListing]);
 
@@ -64,7 +66,8 @@ export default function ListingForm({
       !ram ||
       !storage ||
       !condition ||
-      !description
+      !description ||
+      !location
     ) {
       setError("Please fill in all fields.");
       return;
@@ -88,6 +91,7 @@ export default function ListingForm({
         condition,
         description,
         imageUrl,
+        location,
         status: existingListing?.status || "available",
         createdAt: existingListing?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -174,6 +178,7 @@ export default function ListingForm({
           onChange={(event) => setPrice(event.target.value)}
           className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
           placeholder="Enter price"
+          step={50}
         />
       </div>
 
@@ -196,6 +201,17 @@ export default function ListingForm({
           onChange={(event) => setStorage(event.target.value)}
           className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
           placeholder="Example: 512GB SSD"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block font-medium">Location</label>
+        <input
+          type="text"
+          value={location}
+          onChange={(event) => setLocation(event.target.value)}
+          className="w-full rounded-md border border-gray-600 bg-[#0f172a] px-3 py-2 text-white"
+          placeholder="Example: Calgary"
         />
       </div>
 

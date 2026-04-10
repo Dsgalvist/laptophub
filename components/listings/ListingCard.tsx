@@ -1,50 +1,76 @@
-// This component displays one listing as a card
-// It is used to show basic listing information in pages like Listings and My Listings
+"use client";
+
+// This component displays one listing as a reusable card
+// It can be used in public listings, user listings, and favorites
 
 import Link from "next/link";
 import type { Listing } from "@/types/listing";
 
 interface ListingCardProps {
-    listing: Listing;
+  listing: Listing;
+  showActions?: boolean;
+  onDelete?: (listingId: string) => void;
 }
 
-export default function ListingCard({ listing }: ListingCardProps) {
-    return (
-        <div className="overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md">
-            <img
-                src={listing.imageUrl}
-                alt={listing.title}
-                className="h-48 w-full object-cover"
-            />
+export default function ListingCard({
+  listing,
+  showActions = false,
+  onDelete,
+}: ListingCardProps) {
+  return (
+    <div className="rounded-lg border border-gray-700 bg-[#1e293b] p-4 shadow-sm text-white">
+      <img
+        src={listing.imageUrl}
+        alt={listing.title}
+        className="mb-3 h-40 w-full rounded object-cover"
+      />
 
-            <div className="p-4">
-                <h2 className="text-lg font-semibold">{listing.title}</h2>
+      <h2 className="text-lg font-semibold">{listing.title}</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
-                    {listing.brand} - {listing.model}
-                </p>
+      <p className="text-sm text-gray-300">
+        {listing.brand} - {listing.model}
+      </p>
 
-                <p className="mt-2 font-medium text-black">${listing.price}</p>
+      <p className="mt-2 font-bold text-white">${listing.price}</p>
 
-                <p className="mt-1 text-sm text-gray-500">
-                    {listing.ram} • {listing.storage}
-                </p>
+      <p className="text-sm text-gray-400">
+        {listing.ram} • {listing.storage}
+      </p>
 
-                <p className="mt-1 text-sm text-gray-500">
-                    Condition: {listing.condition}
-                </p>
+      <p className="text-sm text-gray-400">
+        {listing.location || "Location not specified"}
+      </p>
 
-                <p className="mt-1 text-sm text-gray-500">
-                    Status: {listing.status}
-                </p>
+      <p className="text-sm text-gray-400">
+        Condition: {listing.condition}
+      </p>
 
-                <Link
-                    href={`/listings/${listing.listingId}`}
-                    className="mt-4 inline-block rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
-                >
-                    View Details
-                </Link>
-            </div>
-        </div>
-    );
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link
+          href={`/listings/${listing.listingId}`}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700"
+        >
+          View Details
+        </Link>
+
+        {showActions && (
+          <>
+            <Link
+              href={`/dashboard/listings/${listing.listingId}`}
+              className="rounded-md bg-green-600 px-4 py-2 text-sm text-white transition hover:bg-green-700"
+            >
+              Edit
+            </Link>
+
+            <button
+              onClick={() => onDelete?.(listing.listingId)}
+              className="rounded-md bg-red-600 px-4 py-2 text-sm text-white transition hover:bg-red-700"
+            >
+              Delete
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }

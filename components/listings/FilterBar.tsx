@@ -14,6 +14,7 @@ interface FilterBarProps {
   onRamChange: (value: string) => void;
   onStorageChange: (value: string) => void;
   onLocationChange: (value: string) => void;
+  onClearFilters: () => void;
 }
 
 export default function FilterBar({
@@ -27,6 +28,7 @@ export default function FilterBar({
   onRamChange,
   onStorageChange,
   onLocationChange,
+  onClearFilters,
 }: FilterBarProps) {
   const formattedPrice = maxPrice
     ? new Intl.NumberFormat("en-CA", {
@@ -103,6 +105,16 @@ export default function FilterBar({
           onChange={(event) => onPriceChange(event.target.value)}
           className="w-full"
         />
+      </div>
+
+      <div className="md:col-span-2 lg:col-span-3">
+        <button
+          type="button"
+          onClick={onClearFilters}
+          className="rounded-md bg-gray-700 px-4 py-2 text-white transition hover:bg-gray-600"
+        >
+          Clear Filters
+        </button>
       </div>
     </div>
   );

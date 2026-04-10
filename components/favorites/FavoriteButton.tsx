@@ -1,10 +1,10 @@
 "use client";
 
 // This component allows a user to save or remove a favorite listing
-// It connects the current user with a listing in Firestore
+// It uses API routes to connect the frontend with backend logic
 
 import { useEffect, useState } from "react";
-import { addFavorite, getFavoriteByUserAndListing, removeFavorite } from "@/lib/firebase/firestore";
+import { getFavoriteByUserAndListing } from "@/lib/firebase/firestore";
 
 interface FavoriteButtonProps {
   userId: string;
@@ -43,18 +43,37 @@ export default function FavoriteButton({
       setLoading(true);
 
       if (isFavorite) {
-        await removeFavorite(favoriteId);
+        const response = await fetch(`/api/favorites/${favoriteId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to remove favorite.");
+        }
+
         setIsFavorite(false);
         setFavoriteId("");
       } else {
-        const newFavoriteId = await addFavorite({
-          userId,
-          listingId,
-          createdAt: new Date().toISOString(),
+        const response = await fetch("/api/favorites", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            listingId,
+            createdAt: new Date().toISOString(),
+          }),
         });
 
+        if (!response.ok) {
+          throw new Error("Failed to save favorite.");
+        }
+
+        const newFavorite = await response.json();
+
         setIsFavorite(true);
-        setFavoriteId(newFavoriteId);
+        setFavoriteId(newFavorite.favoriteId);
       }
     } catch (error) {
       console.error("Error updating favorite:", error);
